@@ -11,9 +11,11 @@ import Checkout from "@/components/Shared/Checkout";
 const Credits = async () => {
   const { userId } = auth();
 
-  if (!userId) redirect("/sign-in");
+  let user: any;
 
-  const user = await getUserById(userId);
+  if (userId) {
+    user = await getUserById(userId);
+  }
 
   return (
     <>
@@ -60,14 +62,24 @@ const Credits = async () => {
                   Free Consumable
                 </Button>
               ) : (
-                <SignedIn>
-                  <Checkout
-                    plan={plan.name}
-                    amount={plan.price}
-                    credits={plan.credits}
-                    buyerId={user._id}
-                  />
-                </SignedIn>
+                <>
+                  {userId ? (
+                    <SignedIn>
+                      <Checkout
+                        plan={plan.name}
+                        amount={plan.price}
+                        credits={plan.credits}
+                        buyerId={user._id}
+                      />
+                    </SignedIn>
+                  ) : (
+                    <Checkout
+                      plan={plan.name}
+                      amount={plan.price}
+                      credits={plan.credits}
+                    />
+                  )}
+                </>
               )}
             </li>
           ))}
