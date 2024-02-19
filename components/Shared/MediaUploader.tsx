@@ -12,6 +12,7 @@ type MediaUploaderProps = {
   publicId: string;
   image: any;
   type: string;
+  login?: boolean;
 }
 
 const MediaUploader = ({
@@ -19,7 +20,8 @@ const MediaUploader = ({
   setImage,
   image,
   publicId,
-  type
+  type, 
+  login
 }: MediaUploaderProps) => {
   const { toast } = useToast()
 
@@ -46,6 +48,15 @@ const MediaUploader = ({
     toast({
       title: 'Something went wrong while uploading',
       description: 'Please try again',
+      duration: 5000,
+      className: 'error-toast' 
+    })
+  }
+
+  const userIsNotLoginToast = () => {
+    toast({
+      title: 'You must be logged in to upload an image!',
+      description: 'Please, sign in to proceed with the checkout',
       duration: 5000,
       className: 'error-toast' 
     })
@@ -82,7 +93,10 @@ const MediaUploader = ({
               </div>
             </>
           ): (
-            <div className="media-uploader_cta" onClick={() => open()}>
+            <>
+            {login ? (
+              <div className="media-uploader_cta" onClick={() => open()}>
+              
               <div className="media-uploader_cta-image">
                 <Image 
                   src="/assets/icons/add.svg"
@@ -93,6 +107,23 @@ const MediaUploader = ({
               </div>
                 <p className="p-14-medium">Click here to upload image</p>
             </div>
+            ) : (
+              <div className="media-uploader_cta" onClick={() => userIsNotLoginToast()}>
+              
+              <div className="media-uploader_cta-image">
+                <Image 
+                  src="/assets/icons/add.svg"
+                  alt="Add Image"
+                  width={24}
+                  height={24}
+                />
+              </div>
+                <p className="p-14-medium">You must be logged in to upload an image</p>
+            </div>
+            )}
+              
+            </>
+            
           )}
         </div>
       )}

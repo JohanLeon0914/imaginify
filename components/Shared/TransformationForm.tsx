@@ -15,12 +15,6 @@ import {
 import { Button } from "@/components/ui/button"
 import {
   Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { aspectRatioOptions, creditFee, defaultValues, transformationTypes } from "@/constants"
@@ -34,6 +28,7 @@ import { getCldImageUrl } from "next-cloudinary"
 import { addImage, updateImage } from "@/lib/actions/image.actions"
 import { useRouter } from "next/navigation"
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal"
+import { useToast } from "../ui/use-toast"
  
 export const formSchema = z.object({
   title: z.string(),
@@ -52,6 +47,7 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
   const [transformationConfig, setTransformationConfig] = useState(config)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const { toast } = useToast();
 
   const initialValues = data && action === 'Update' ? {
     title: data?.title,
@@ -95,17 +91,26 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
 
       if(action === 'Add') {
         try {
-          const newImage = await addImage({
-            image: imageData,
-            userId,
-            path: '/'
-          })
-
-          if(newImage) {
-            form.reset()
-            setImage(data)
-            router.push(`/transformations/${newImage._id}`)
+          if(userId) {
+            const newImage = await addImage({
+              image: imageData,
+              userId,
+              path: '/'
+            })
+            if(newImage) {
+              form.reset()
+              setImage(data)
+              router.push(`/transformations/${newImage._id}`)
+            }
+          } else {
+            toast({
+              title: "You must be logged in to checkout",
+              description: "Please, sign in to proceed with the transformation",
+              duration: 5000,
+              className: "error-toast",
+            });
           }
+          
         } catch (error) {
           console.log(error);
         }
@@ -113,18 +118,27 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
 
       if(action === 'Update') {
         try {
-          const updatedImage = await updateImage({
-            image: {
-              ...imageData,
-              _id: data._id
-            },
-            userId,
-            path: `/transformations/${data._id}`
-          })
-
-          if(updatedImage) {
-            router.push(`/transformations/${updatedImage._id}`)
+          if(userId) {
+            const updatedImage = await updateImage({
+              image: {
+                ...imageData,
+                _id: data._id
+              },
+              userId,
+              path: `/transformations/${data._id}`
+            })
+            if(updatedImage) {
+              router.push(`/transformations/${updatedImage._id}`)
+            }
+          } else {
+            toast({
+              title: "You must be logged in to checkout",
+              description: "Please, sign in to proceed with the update",
+              duration: 5000,
+              className: "error-toast",
+            });
           }
+          
         } catch (error) {
           console.log(error);
         }
@@ -164,7 +178,8 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
   }
 
   const onTransformHandler = async () => {
-    setIsTransforming(true)
+    if(userId) {
+      setIsTransforming(true)
 
     setTransformationConfig(
       deepMergeObjects(newTransformation, transformationConfig)
@@ -175,6 +190,14 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
     startTransition(async () => {
       await updateCredits(userId, creditFee)
     })
+    } else {
+      toast({
+        title: "You must be logged in to checkout",
+        description: "Please, sign in to proceed with the transformation",
+        duration: 5000,
+        className: "error-toast",
+      });
+    }
   }
 
   useEffect(() => {
@@ -186,7 +209,7 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {creditBalance < Math.abs(creditFee) && <InsufficientCreditsModal />}
+        { creditBalance && (creditBalance < Math.abs(creditFee) && <InsufficientCreditsModal />)}
         <CustomField 
           control={form.control}
           name="title"
@@ -268,7 +291,8 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
         )}
 
         <div className="media-uploader-field">
-          <CustomField 
+          {userId ? (
+            <CustomField 
             control={form.control}
             name="publicId"
             className="flex size-full flex-col"
@@ -279,9 +303,28 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
                 publicId={field.value}
                 image={image}
                 type={type}
+                login={true}
               />
             )}
           />
+          ) : (
+            <CustomField 
+            control={form.control}
+            name="publicId"
+            className="flex size-full flex-col"
+            render={({ field }) => (
+              <MediaUploader 
+                onValueChange={field.onChange}
+                setImage={setImage}
+                publicId={field.value}
+                image={image}
+                type={type}
+                login={false}
+              />
+            )}
+          />
+          )}
+          
 
           <TransformedImage 
             image={image}

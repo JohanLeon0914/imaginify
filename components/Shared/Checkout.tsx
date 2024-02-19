@@ -7,7 +7,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { checkoutCredits } from "@/lib/actions/transaction.action";
 
 import { Button } from "../ui/button";
-import { Toast } from "@radix-ui/react-toast";
 
 const Checkout = ({
   plan,
@@ -59,8 +58,8 @@ const Checkout = ({
       await checkoutCredits(transaction);
     } else {
       toast({
-        title: "You must be logged in to checkout",
-        description: "Please sign in to proceed with the checkout",
+        title: "You must be logged in to checkout!",
+        description: "Please, sign in to proceed with the checkout",
         duration: 5000,
         className: "error-toast",
       });
