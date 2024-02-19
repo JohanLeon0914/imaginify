@@ -9,12 +9,13 @@ import { getUserById } from "@/lib/actions/user.actions";
 
 const Profile = async ({ searchParams }: SearchParamProps) => {
   const page = Number(searchParams?.page) || 1;
+  const searchQuery = (searchParams?.query as string) || '';
   const { userId } = auth();
 
   if (!userId) redirect("/sign-in");
 
   const user = await getUserById(userId);
-  const images = await getUserImages({ page, userId: user._id });
+  const images = await getUserImages({ page, userId: user._id, searchQuery });
 
   return (
     <>
@@ -52,6 +53,7 @@ const Profile = async ({ searchParams }: SearchParamProps) => {
 
       <section className="mt-8 md:mt-14">
         <Collection
+          hasSearch={true}
           images={images?.data}
           totalPages={images?.totalPages}
           page={page}

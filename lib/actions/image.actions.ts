@@ -150,27 +150,43 @@ export async function getAllImages({ limit = 9, page = 1, searchQuery = '' }: {
   }
 }
 
+interface SearchQuery {
+  $or: ({ title: { $regex: string; $options: string } } | { description: { $regex: string; $options: string } })[];
+}
+
 // GET IMAGES BY USER
 export async function getUserImages({
   limit = 9,
   page = 1,
   userId,
+  searchQuery = ''
 }: {
   limit?: number;
   page: number;
   userId: string;
+  searchQuery?: string;
 }) {
   try {
     await connectToDatabase();
 
     const skipAmount = (Number(page) - 1) * limit;
 
-    const images = await populateUser(Image.find({ author: userId }))
+    let imageQuery: { author: string } | SearchQuery = { author: userId };
+    if (searchQuery !== '') {
+      imageQuery = {
+        $or: [
+          { title: { $regex: searchQuery, $options: 'i' } },
+          { description: { $regex: searchQuery, $options: 'i' } }
+        ]
+      };
+    }
+
+    const images = await populateUser(Image.find(imageQuery))
       .sort({ updatedAt: -1 })
       .skip(skipAmount)
       .limit(limit);
 
-    const totalImages = await Image.find({ author: userId }).countDocuments();
+    const totalImages = await Image.find(imageQuery).countDocuments();
 
     return {
       data: JSON.parse(JSON.stringify(images)),
